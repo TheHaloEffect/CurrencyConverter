@@ -51,8 +51,6 @@ function App() {
     }
   }, [fromCurrency, toCurrency])
 
-  console.log("Exchange rate: ", exchangeRate);
-
   function handeFromAmountChange(e) {
     setInitialAmount(e.target.value);
     setAmountFromCurrency(true);
