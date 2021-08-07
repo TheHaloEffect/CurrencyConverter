@@ -2,32 +2,85 @@ import React, { useEffect, useState } from 'react'
 import Currency from './components/Currency';
 import './App.css';
 
+const BASE_URL = `https://v6.exchangerate-api.com/v6/${process.env.REACT_APP_API_KEY}`;
+
 function App() {
-  // Gets current date for retrieving updated API data
-  // var today = new Date();
-  // var day = today.getDate() <= 9 ? "0" + today.getDate() : today.getDate();
-  // var month = today.getMonth() <= 9 ? "0" + (today.getMonth() + 1) : today.getMonth() + 1;
-  // var year = today.getFullYear();
+  // Requesting and retrieving API data the first time the app loads
+  const [currencyOptions, setCurrencyOptions] = useState([]);
 
-  const [currencyOptions, setCurrencyOptions] = useState([])
-  console.log(currencyOptions);
+  // Setting initial currencies
+  const [fromCurrency, setFromCurrency] = useState();
+  const [toCurrency, setToCurrency] = useState();
 
-  // Used for calling data the first time the app loads
+  // Setting initial amounts
+  const [initialAmount, setInitialAmount] = useState(1);
+
+  // Checks if amount in from currency field was changed
+  const [exchangeRate, setExchangeRate] = useState()
+  const [amountFromCurrency, setAmountFromCurrency] = useState(true);
+  
+  // Currency conversion
+  let toAmount, fromAmount
+  if (amountFromCurrency) {
+    fromAmount = initialAmount;
+    toAmount = initialAmount * exchangeRate;
+  }
+  else {
+    toAmount = initialAmount;
+    fromAmount = initialAmount / exchangeRate;
+  }
+  
+  // Called when the app first loads
   useEffect(() => {
-    
-    fetch(`https://freecurrencyapi.net/api/v1/rates?apikey=${process.env.REACT_APP_API_KEY}`)
+    fetch(`${BASE_URL}/latest/EUR`)
       .then(res => res.json())
-      .then(json => {
-        setCurrencyOptions([...Object.keys(json.data['2021-08-06'])])
+      .then(data => {
+        setCurrencyOptions([...Object.keys(data.conversion_rates)])
+        setFromCurrency(data.base_code)
+        setToCurrency("USD");
+        setExchangeRate(data.conversion_rates["USD"])
     })
   }, []);
+
+  // Called when fromCurrency or toCurrency changes
+  useEffect(() => {
+    if (fromCurrency != null && toCurrency != null) {
+      fetch(`${BASE_URL}/pair/${fromCurrency}/${toCurrency}`)
+      .then(res => res.json())
+      .then(data => setExchangeRate(data.conversion_rate))
+    }
+  }, [fromCurrency, toCurrency])
+
+  console.log("Exchange rate: ", exchangeRate);
+
+  function handeFromAmountChange(e) {
+    setInitialAmount(e.target.value);
+    setAmountFromCurrency(true);
+  }
+
+  function handleToAmountChange(e) {
+    setInitialAmount(e.target.value);
+    setAmountFromCurrency(false);
+  }
   
     return (
       <div className="App">
         <h1> Currency Converter </h1>
-        <Currency currencyOptions={currencyOptions} />
+        <Currency 
+          currencyOptions={currencyOptions} 
+          selectedCurrency={fromCurrency}
+          onChangeCurrency={e => setFromCurrency(e.target.value)}
+          initialAmount={fromAmount}
+          onChangeAmount={handeFromAmountChange}
+        />
         <div className="equals-sign"> = </div>
-        <Currency currencyOptions={currencyOptions} />
+        <Currency 
+          currencyOptions={currencyOptions} 
+          selectedCurrency={toCurrency}
+          onChangeCurrency={e => setToCurrency(e.target.value)}
+          initialAmount={toAmount}
+          onChangeAmount={handleToAmountChange}
+        />
       </div>
     );
   }
