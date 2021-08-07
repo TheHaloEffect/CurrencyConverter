@@ -1,11 +1,17 @@
 import React from 'react'
 
-export default function Currency() {
+export default function Currency(props) {
+    const {
+        currencyOptions
+     } = props
+
     return (
         <div>
             <input type="number" className="currency-input"></input>
             <select>
-                <option value="EUR">EUR</option>
+                {currencyOptions.map(option => (
+                    <option value={option}>{option}</option>
+                ))}
             </select>
         </div>
     )
